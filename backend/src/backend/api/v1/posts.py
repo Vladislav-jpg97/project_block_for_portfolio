@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from starlette import status
 
 from backend.api.v1.feed import FeedType
+from backend.schemas.pagination import PaginatedResponse
 
 router = APIRouter(
     prefix="/posts",
@@ -23,7 +24,11 @@ async def create_post(post: PostBreed):
     }
 
 
-@router.get("/")
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=PaginatedResponse[PostBreed],
+)
 async def list_posts(
         page: int = 1,
         size: int = 10,
