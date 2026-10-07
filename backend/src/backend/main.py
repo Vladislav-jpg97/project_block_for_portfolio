@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from backend.api.v1.feed import router as feeds_router
 from backend.api.v1.posts import router as posts_router
 from backend.api.v1.user import router as user_router
+from backend.api.v1.auth import router as auth_router
 
 
 
@@ -26,3 +27,4 @@ async def health():
 app.include_router(posts_router, prefix="/api.v1")
 app.include_router(feeds_router, prefix="/api.v1")
 app.include_router(user_router, prefix="/api.v1")
+app.include_router(auth_router, prefix="/api.v1")
