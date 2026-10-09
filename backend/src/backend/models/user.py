@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.models.base import Base
 from backend.models.mixins import TimeStampMixin
 from backend.models.post import Post
+from backend.models.vote import PostVote
 
 
 class User(TimeStampMixin, Base):
@@ -37,4 +38,12 @@ class User(TimeStampMixin, Base):
 
     posts : Mapped[list[Post]] = relationship(
         back_populates="author"
+    )
+
+    post_votes: Mapped[list["PostVote"]] = relationship(
+        back_populates="user"
+    )
+
+    bookmarks: Mapped[list["Bookmark"]] = relationship(
+        back_populates="user"
     )
