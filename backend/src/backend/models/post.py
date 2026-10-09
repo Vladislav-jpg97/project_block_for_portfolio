@@ -33,7 +33,10 @@ class Post(TimeStampMixin, SlugMixin, Base):
 
     author_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE')
+    )
 
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey('categories.id', ondelete='RESTRICT')
     )
 
     is_published: Mapped[bool] = mapped_column(
