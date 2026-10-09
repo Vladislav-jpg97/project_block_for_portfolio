@@ -69,3 +69,7 @@ class Post(TimeStampMixin, SlugMixin, Base):
     bookmarks: Mapped[list["Bookmark"]] = relationship(
         back_populates="post",
     )
+
+    category: Mapped["Category"] = relationship(
+        back_populates="posts",
+    )
