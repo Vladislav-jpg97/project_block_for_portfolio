@@ -47,3 +47,6 @@ class User(TimeStampMixin, Base):
     bookmarks: Mapped[list["Bookmark"]] = relationship(
         back_populates="user"
     )
+    comments: Mapped[list["Comment"]] = relationship(
+        back_populates="autor",
+    )

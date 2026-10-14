@@ -16,6 +16,6 @@ class Category(SlugMixin, Base, TimeStampMixin):
         String(512),
     )
 
-    posts : Mapped[list["Posts"]] = relationship(
+    posts : Mapped[list["Post"]] = relationship(
         back_populates="category",
     )

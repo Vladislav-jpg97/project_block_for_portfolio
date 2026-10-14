@@ -17,7 +17,7 @@ class Tag(SlugMixin,Base):
         default=0
     )
 
-    posts : Mapped[list["Post"]] = relationship(
-        secondary="posts_tag",
+    posts: Mapped[list["Post"]] = relationship(
+        secondary="post_tags",
         back_populates="tags",
     )

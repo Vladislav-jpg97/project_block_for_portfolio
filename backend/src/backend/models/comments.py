@@ -16,7 +16,7 @@ class Comment(TimeStampMixin, Base):
     )
 
     post_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("posts.id", ondelete="CASCADE"),
     )
 
     patent_id: Mapped[int | None] = mapped_column(
