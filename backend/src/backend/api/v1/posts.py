@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from starlette import status
 from backend.api.v1.feed import FeedType
+from backend.dependencies.post import PostServiceDep
 from backend.schemas.pagination import PaginatedResponse
 from backend.schemas.post import PostCreate, PostBrief, PostRead, PostUpdate
 
@@ -9,12 +10,15 @@ router = APIRouter(
     tags=["Posts"],
 )
 
+AUTHOR_ID = 1
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_post(body: PostCreate):
-    return {
-        "msg": "post created",
-    }
+async def create_post(
+        body: PostCreate,
+        service: PostServiceDep
+):
+    post = await service.create(body, AUTHOR_ID)
 
 
 @router.get(
@@ -23,34 +27,28 @@ async def create_post(body: PostCreate):
     response_model=PaginatedResponse[PostBrief],
 )
 async def list_posts(
+        service: PostServiceDep,
         page: int = 1,
         size: int = 10,
         q: str | None = None,
         tag: str | None = None,
         feed: FeedType = FeedType.new,
+
 ):
-    return {
-        "posts": [],
-        "page": page,
-        "size": size,
-        "q": q,
-        "feed": feed,
-        "tag": tag,
-    }
+    post = await service.get_all()
+    return post
 
 
 @router.get(
     "/{post_id}",
     response_model=PostRead
 )
-async def get_post(slug: str):
-    return {
-        "id": slug,
-        "title": f"Post : #{slug}",
-        "slug": f"post_{slug}",
-        "hashed_password": "secret",
-        "internal_id": 12345
-    }
+async def get_post(
+        slug: str,
+        service: PostServiceDep
+):
+    post = await service.view_or_404(slug)
+    return post
 
 
 @router.patch(
@@ -59,13 +57,14 @@ async def get_post(slug: str):
 async def update_post(
         post_id: int,
         body: PostUpdate,
+        service: PostServiceDep
 ):
-    pass
+    await service.update(post_id, body, AUTHOR_ID)
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(post_id: int):
-    return None
+async def delete_post(post_id: int, service: PostServiceDep):
+    await service.delete(post_id, AUTHOR_ID)
 
 
 @router.patch(
