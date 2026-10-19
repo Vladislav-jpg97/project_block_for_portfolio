@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from backend.dependencies.tag import TagServiceDep
 from backend.schemas.pagination import PaginatedResponse
 from backend.schemas.tag import TagCreate, TagRead
 
@@ -12,16 +13,21 @@ router = APIRouter(
 @router.post("/", )
 async def create_tag(
         body: TagCreate,
+        service: TagServiceDep
 ):
-    pass
+    tag = await service.create(body)
+    return tag
 
 
 @router.get(
     "/",
     response_model=PaginatedResponse[TagRead],
 )
-async def list_tags():
-    pass
+async def list_tags(
+        service: TagServiceDep,
+):
+    tags = service.get_all()
+    return tags
 
 
 @router.get(
@@ -30,5 +36,15 @@ async def list_tags():
 )
 async def get_tag(
         tag_id: int,
+        service: TagServiceDep,
 ):
-    pass
+    tag = await service.get_or_404(tag_id)
+    return tag
+
+
+@router.delete("/{tag_id}", )
+async def delete_tag(
+        tag_id: int,
+        service: TagServiceDep,
+):
+    await service.delete(tag_id)

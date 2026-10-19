@@ -4,14 +4,16 @@ from starlette import status
 
 from backend.models import Post
 from backend.repository.post import PostRepository
+from backend.repository.tag import TagRepository
 from backend.schemas.post import PostCreate, PostUpdate
 from backend.utils.slug import slug_generate
 
 
 class PostService:
-    def __init__(self, session: AsyncSession, post_repo: PostRepository):
+    def __init__(self, session: AsyncSession, post_repo: PostRepository, tag_repo: TagRepository):
         self.session = session
         self.post_repo = post_repo
+        self.tag_repo = tag_repo
 
     async def _make_unique_slug(self, base_slug) -> str:
         slug = base_slug
@@ -35,6 +37,10 @@ class PostService:
             tags=tags
         )
         post = await self.post_repo.add(post)
+
+        for tag in tags:
+            await self.tag_repo.sync_posts_count(tag.id)
+
         await self.session.commit()
         return post
 
@@ -84,7 +90,7 @@ class PostService:
         await self.post_repo.delete(post)
         await self.session.commit()
 
-    async def view_or_404(self,slug: str) -> Post:
+    async def view_or_404(self, slug: str) -> Post:
         post = await self.post_repo.get_by_slug(slug)
         if not post:
             raise HTTPException(
@@ -98,5 +104,3 @@ class PostService:
     async def get_all(self) -> list[Post]:
         posts = await self.post_repo.get_all()
         return posts
-
-
