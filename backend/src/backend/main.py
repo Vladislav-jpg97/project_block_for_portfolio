@@ -6,6 +6,8 @@ from backend.api.v1.user import router as user_router
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.tags import router as tags_router
 from backend.api.v1.category import router as category_router
+from backend.api.v1.comments import router as comments_router
+
 
 app = FastAPI(
     title="DevTalks",
@@ -30,3 +32,4 @@ app.include_router(user_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(tags_router, prefix="/api/v1")
 app.include_router(category_router, prefix="/api/v1")
+app.include_router(comments_router, prefix="/api/v1")
