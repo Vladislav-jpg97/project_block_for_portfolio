@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from backend.dependencies.tag import TagServiceDep
-from backend.schemas.pagination import PaginatedResponse
+from backend.schemas.pagination import Page
 from backend.schemas.tag import TagCreate, TagRead
 
 router = APIRouter(
@@ -21,7 +21,7 @@ async def create_tag(
 
 @router.get(
     "/",
-    response_model=PaginatedResponse[TagRead],
+    response_model=Page[TagRead],
 )
 async def list_tags(
         service: TagServiceDep,

@@ -5,7 +5,8 @@ from starlette import status
 from backend.models import Post
 from backend.repository.post import PostRepository
 from backend.repository.tag import TagRepository
-from backend.schemas.post import PostCreate, PostUpdate
+from backend.schemas.pagination import PaginationParams
+from backend.schemas.post import PostCreate, PostUpdate, PostFilters
 from backend.utils.slug import slug_generate
 
 
@@ -101,6 +102,10 @@ class PostService:
         await self.session.commit()
         return post
 
-    async def get_all(self) -> list[Post]:
-        posts = await self.post_repo.get_all()
+    async def get_all(
+            self,
+            filters: PostFilters,
+            pagination: PaginationParams
+    ) -> list[Post]:
+        posts = await self.post_repo.get_all(filters, pagination)
         return posts

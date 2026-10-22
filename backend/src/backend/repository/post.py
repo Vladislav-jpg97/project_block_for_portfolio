@@ -1,8 +1,12 @@
-from sqlalchemy import select
+from datetime import datetime
+
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.models import Post, Tag
+from backend.schemas.pagination import PaginationParams, Page
+from backend.schemas.post import PostFilters
 
 
 class PostRepository:
@@ -34,11 +38,58 @@ class PostRepository:
         post = result.scalar_one_or_none()
         return post
 
-    async def get_all(self):
+    async def get_all(
+            self,
+            filters: PostFilters,
+            pagination: PaginationParams
+    ):
+
         stmt = self._base_query()
+
+        if filters.q:
+            pattern = f"%{filters.q}%"
+            stmt = stmt.where(
+                or_(
+                    Post.title.ilike(pattern),
+                    Post.content.ilike(pattern)
+                ),
+
+            )
+
+        if filters.category_id is not None:
+            stmt = stmt.where(
+                Post.category_id == filters.category_id
+            )
+
+        if filters.author_id is not None:
+            stmt = stmt.where(
+                Post.author_id == filters.author_id
+            )
+
+        if filters.date_from:
+            stmt = stmt.where(
+                Post.created_at >= datetime.combine(filters.date_from, datetime.min.time())
+            )
+        if filters.date_to:
+            stmt = stmt.where(
+                Post.created_at <= datetime.combine(filters.date_to, datetime.max.time())
+            )
+
+        count_stmt = select(
+            func.count()
+        ).select_from(stmt.subquery())
+
+        total = (await self.session.execute(count_stmt)).scalar_one()
+
+        stmt = stmt.offset(pagination.offset).limit(pagination.limit)
+
         result = await self.session.execute(stmt)
-        post = result.scalars().all()
-        return post
+        posts = result.scalars().all()
+        return Page.create(
+            items=posts,
+            total=total,
+            params=pagination,
+        )
 
     async def delete(self, post: Post):
         await self.session.delete(post)
@@ -58,6 +109,6 @@ class PostRepository:
         await self.session.flush()
         await self.session.refresh(post)
 
-    async def increment_views(self,post: Post) -> None:
+    async def increment_views(self, post: Post) -> None:
         post.votes_count += 1
         await self.session.flush()

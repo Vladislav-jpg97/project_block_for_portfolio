@@ -6,7 +6,7 @@ from backend.dependencies.post import CurrentPostDep
 from backend.schemas.comment import CommentResponse, CommentCreate, CommentUpdate
 
 router = APIRouter(
-    prefix="posts/{post_id}/comments}",
+    prefix="/posts/{post_id}/comments}",
     tags=["Comments"],
 )
 

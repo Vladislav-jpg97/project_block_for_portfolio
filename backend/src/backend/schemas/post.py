@@ -1,9 +1,33 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
+from dataclasses import dataclass
+from fastapi import Query
 
 from backend.schemas.tag import TagRead
 from backend.schemas.user import UserBrief
+
+
+@dataclass(frozen=True)
+class PostFilters:
+    q: str | None = Query(
+        default=None,
+    )
+    category_id: int | None = Query(
+        default=None,
+        ge=1,
+    )
+    author_id: int | None = Query(
+        default=None,
+        ge=1,
+    )
+
+    date_from : date | None = Query(
+        default=None,
+    )
+    date_to: date | None = Query(
+        default=None,
+    )
 
 
 class PostBase(BaseModel):
@@ -16,31 +40,10 @@ class PostBase(BaseModel):
         ]
     )
 
-    # slug: str = Field(
-    #     min_length=3,
-    #     max_length=220,
-    #     pattern=r"^[a-z0-9-]+$",
-    #     description="URL-friendly идентификатор"
-    # )
-
-    # @field_validator("slug", mode='after')
-    # @classmethod
-    # def slug_validator(cls, v: str):
-    #     if not v.islower():
-    #         raise ValueError("Слаг должен быть с маленькими буквами")
-    #     return v
-
     @field_validator("title", mode='after')
     @classmethod
     def no_leading_trailing_spaces(cls, v: str):
         return v.strip()
-
-    # @field_validator("slug", mode='after')
-    # @classmethod
-    # def autogenerate_slug(cls, v: str):
-    #     if isinstance(v, str):
-    #         return v.lower().replace(" ", "-")
-    #     return v
 
 
 class PostCreate(PostBase):
