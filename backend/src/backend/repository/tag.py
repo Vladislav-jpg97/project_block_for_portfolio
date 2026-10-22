@@ -2,17 +2,34 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models import Tag, post_tags
+from backend.schemas.pagination import PaginationParams, Page
 
 
 class TagRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_all(self) -> list[Tag]:
+    async def get_all(
+            self,
+            pagination: PaginationParams
+    ):
         stmt = select(Tag).order_by(Tag.name)
+
+        count_stmt = select(
+            func.count()
+        ).select_from(stmt.subquery())
+
+        total = (await self.session.execute(count_stmt)).scalar_one()
+
+        stmt = stmt.offset(pagination.offset).limit(pagination.limit)
+
         result = await self.session.execute(stmt)
         tags = result.scalars().all()
-        return tags
+        return Page.create(
+            items=tags,
+            total=total,
+            params=pagination,
+        )
 
     async def get_by_id(self, tag_id: int) -> Tag | None:
         stmt = select(Tag).where(Tag.id == tag_id)
@@ -36,8 +53,7 @@ class TagRepository:
         await self.session.delete(tag)
         await self.session.flush()
 
-
-    async def sync_posts_count(self,tag_id: int) -> None:
+    async def sync_posts_count(self, tag_id: int) -> None:
         result = await self.session.execute(
             select(func.count())
             .select_from(post_tags)
