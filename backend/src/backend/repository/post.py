@@ -20,6 +20,7 @@ class PostRepository(
     DeleteRepositoryMixin[Post],
     ListRepositoryMixin[Post],
 ):
+    model = Post
     base_query = select(Post).options(
         selectinload(Post.author),
         selectinload(Post.category),

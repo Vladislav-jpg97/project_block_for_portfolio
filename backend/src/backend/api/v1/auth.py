@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from starlette import status
 
+from backend.dependencies.auth import AuthServiceDep, CurrentUserDep
 from backend.schemas.auth import UserLogin, ChangePassword, Token, RefreshToken
 from backend.schemas.user import UserCreate, UserUpdate, UserRead
 
@@ -17,8 +18,10 @@ router = APIRouter(
 )
 async def register_user(
         body: UserCreate,
+        service: AuthServiceDep
 ):
-    pass
+    user = await service.register(body=body)
+    return user
 
 
 @router.post(
@@ -27,8 +30,11 @@ async def register_user(
 )
 async def login_user(
         body: UserLogin,
+        service: AuthServiceDep
+
 ):
-    pass
+    token = await service.login(body=body)
+    return token
 
 
 @router.post(
@@ -37,24 +43,38 @@ async def login_user(
 )
 async def refresh_token(
         body: RefreshToken,
+        service: AuthServiceDep
 ):
-    pass
+    token = await service.refresh(body=body)
+    return token
 
 
-@router.get("/me")
-async def get_me():
-    pass
+@router.get("/me", response_model=UserRead)
+async def get_me(
+        current_user: CurrentUserDep
+):
+    return current_user
 
 
-@router.patch("/me")
+@router.patch("/me", )
 async def update_me(
-        body: UserUpdate
+        body: UserUpdate,
+        current_user: CurrentUserDep,
+        service: AuthServiceDep,
 ):
-    pass
+    await service.update_me(
+        user=current_user,
+        body=body
+    )
 
 
-@router.post("/change-password")
+@router.post("/change-password", status_code=status.HTTP_200_OK)
 async def change_password(
         body: ChangePassword,
+        current_user: CurrentUserDep,
+        service: AuthServiceDep
 ):
-    pass
+    await service.change_password(
+        user=current_user,
+        body=body
+    )

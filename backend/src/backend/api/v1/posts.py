@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
 from starlette import status
+
+from backend.dependencies.auth import CurrentUserDep
 from backend.dependencies.post import PostServiceDep, CurrentPostDep
 from backend.schemas.pagination import Page, PaginationParams
 from backend.schemas.post import PostCreate, PostBrief, PostRead, PostUpdate, PostFilters
@@ -9,15 +11,14 @@ router = APIRouter(
     tags=["Posts"],
 )
 
-AUTHOR_ID = 1
-
-
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_post(
         body: PostCreate,
+        current_user: CurrentUserDep,
         service: PostServiceDep
 ):
-    post = await service.create(body, AUTHOR_ID)
+    post = await service.create(body, current_user.id)
+    return post
 
 
 @router.get(
@@ -53,14 +54,25 @@ async def get_post(
 async def update_post(
         post_id: int,
         body: PostUpdate,
+        current_user: CurrentUserDep,
         service: PostServiceDep
 ):
-    await service.update(post_id, body, AUTHOR_ID)
+    await service.update(post_id, body, current_user.id)
 
 
-@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(post_id: int, service: PostServiceDep):
-    await service.delete(post_id, AUTHOR_ID)
+@router.delete(
+    "/{post_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_post(
+        post_id: int,
+        service: PostServiceDep,
+        current_user: CurrentUserDep
+):
+    await service.delete(
+        post_id,
+        current_user.id
+    )
 
 
 @router.patch(
@@ -68,9 +80,10 @@ async def delete_post(post_id: int, service: PostServiceDep):
 )
 async def publish_post(
         post: CurrentPostDep,
-        service: PostServiceDep
+        service: PostServiceDep,
+        current_user: CurrentUserDep,
 ):
-    await service.publish(AUTHOR_ID,post)
+    await service.publish(current_user.id, post)
 
 
 @router.post(

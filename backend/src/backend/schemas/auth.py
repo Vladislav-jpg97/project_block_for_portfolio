@@ -10,7 +10,7 @@ class Token(RefreshToken):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 

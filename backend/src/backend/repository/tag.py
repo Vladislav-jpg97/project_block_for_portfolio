@@ -17,6 +17,7 @@ class TagRepository(
     DeleteRepositoryMixin[Tag],
     ListRepositoryMixin[Tag],
 ):
+    model = Tag
     base_query = select(Tag)
 
     async def get_by_slug(self, slug: str) -> Tag | None:

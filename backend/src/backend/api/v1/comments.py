@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from starlette import status
 
+from backend.dependencies.auth import CurrentUserDep
 from backend.dependencies.comment import CommentServiceDep
 from backend.dependencies.post import CurrentPostDep
 from backend.schemas.comment import CommentResponse, CommentCreate, CommentUpdate
@@ -9,8 +10,6 @@ router = APIRouter(
     prefix="/posts/{post_id}/comments}",
     tags=["Comments"],
 )
-
-TEMP_USER_ID = 1
 
 
 @router.get("/", response_model=list[CommentResponse])
@@ -26,9 +25,10 @@ async def get_comments(
 async def create_comment(
         post: CurrentPostDep,
         body: CommentCreate,
-        service: CommentServiceDep
+        service: CommentServiceDep,
+        current_user: CurrentUserDep,
 ):
-    comment = await service.create(post.id, TEMP_USER_ID, body)
+    comment = await service.create(post.id, current_user.id, body)
     return comment
 
 
@@ -47,15 +47,17 @@ async def update_comment(
         post: CurrentPostDep,
         comment_id: int,
         body: CommentUpdate,
-        service: CommentServiceDep
+        service: CommentServiceDep,
+        current_user: CurrentUserDep,
 ):
-    await service.update(post.id, comment_id, TEMP_USER_ID, body)
+    await service.update(post.id, comment_id, current_user.id, body)
 
 
 @router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comment(
         post: CurrentPostDep,
         comment_id: int,
-        service: CommentServiceDep
+        service: CommentServiceDep,
+        current_user: CurrentUserDep,
 ):
-    await service.delete(post.id, comment_id, TEMP_USER_ID)
+    await service.delete(post.id, comment_id, current_user.id)

@@ -16,6 +16,7 @@ class CommentRepository(
     UpdateRepositoryMixin[Comment],
     DeleteRepositoryMixin[Comment],
 ):
+    model = Comment
     base_query = select(Comment)
 
     async def get_by_post(self, post_id: int) -> list[Comment]:
