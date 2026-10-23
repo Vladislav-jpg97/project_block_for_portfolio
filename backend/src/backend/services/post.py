@@ -109,3 +109,13 @@ class PostService:
     ) -> list[Post]:
         posts = await self.post_repo.get_all(filters, pagination)
         return posts
+
+    async def publish(self,current_user_id : int, post: Post):
+        if post.author_id != current_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Вы можете публиковать только свои посты"
+            )
+        post.is_published = True
+        await self.post_repo.update(post)
+        await self.session.commit()

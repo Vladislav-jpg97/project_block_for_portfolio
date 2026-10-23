@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from starlette import status
 
 from backend.dependencies.category import CategoryServiceDep
-from backend.models import Category
 from backend.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 
 router = APIRouter(

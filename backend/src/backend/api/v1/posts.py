@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from starlette import status
-from backend.dependencies.post import PostServiceDep
+from backend.dependencies.post import PostServiceDep, CurrentPostDep
 from backend.schemas.pagination import Page, PaginationParams
 from backend.schemas.post import PostCreate, PostBrief, PostRead, PostUpdate, PostFilters
 
@@ -67,9 +67,10 @@ async def delete_post(post_id: int, service: PostServiceDep):
     "/{post_id}/publish",
 )
 async def publish_post(
-        post_id: int,
+        post: CurrentPostDep,
+        service: PostServiceDep
 ):
-    pass
+    await service.publish(AUTHOR_ID,post)
 
 
 @router.post(

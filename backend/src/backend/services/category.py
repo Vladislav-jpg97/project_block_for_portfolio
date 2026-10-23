@@ -48,7 +48,7 @@ class CategoryService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Категория с название слага : {slug} уже существует"
             )
-        category = await self.category_repo.add(
+        category = Category(
             name=body.name,
             slug=slug,
             description=body.description,
@@ -67,10 +67,11 @@ class CategoryService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Категории с ID {category_id} не существует"
             )
+        category.name = body.name
+        category.description = body.description
+
         await self.category_repo.update(
-            category_id=category_id,
-            name=body.name,
-            description=body.description,
+            category
         )
         await self.session.commit()
 
@@ -84,5 +85,5 @@ class CategoryService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Категории с ID {category_id} не существует"
             )
-        await self.category_repo.delete(category_id)
+        await self.category_repo.delete(category)
         await self.session.commit()
