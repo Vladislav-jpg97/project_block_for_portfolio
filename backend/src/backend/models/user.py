@@ -26,6 +26,10 @@ class User(TimeStampMixin, Base):
     bio: Mapped[str | None] = mapped_column(
         String(512),
     )
+    avatar_url: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+    )
     karma:Mapped[int] = mapped_column(
         default=0
     )
@@ -48,5 +52,5 @@ class User(TimeStampMixin, Base):
         back_populates="user"
     )
     comments: Mapped[list["Comment"]] = relationship(
-        back_populates="autor",
+        back_populates="author",
     )

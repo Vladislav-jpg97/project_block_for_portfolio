@@ -25,9 +25,10 @@ class UserBase(BaseModel):
         max_length=100,
         pattern=r"^[a-zA-Z0-9-_]+$"
     )
-    @field_validator("password",mode="after")
+
+    @field_validator("username", mode="after")
     @classmethod
-    def to_lowercase_username(cls,v:str):
+    def to_lowercase_username(cls, v: str) -> str:
         return v.lower()
 
 

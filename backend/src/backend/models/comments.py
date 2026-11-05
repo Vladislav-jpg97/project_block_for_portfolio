@@ -27,7 +27,7 @@ class Comment(TimeStampMixin, Base):
         default=0
     )
 
-    autor: Mapped["User"] = relationship(
+    author: Mapped["User"] = relationship(
         back_populates="comments",
         lazy="select",
     )
@@ -38,6 +38,8 @@ class Comment(TimeStampMixin, Base):
 
     replies: Mapped[list["Comment"]] = relationship(
         back_populates="parent",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     parent: Mapped["Comment | None"] = relationship(

@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from backend.core.cache import CacheService
 from backend.dependencies.auth import UserRepoDep
 from backend.dependencies.bookmark import BookmarkRepoDep
 from backend.dependencies.cache import CacheServiceDep
@@ -66,7 +65,19 @@ async def get_current_post(
     return post
 
 
+async def get_published_post(
+        post_id: int,
+        service: PostServiceDep,
+) -> Post:
+    return await service.get_published_by_id_or_404(post_id)
+
+
 CurrentPostDep = Annotated[
     Post,
     Depends(get_current_post),
+]
+
+PublishedPostDep = Annotated[
+    Post,
+    Depends(get_published_post),
 ]

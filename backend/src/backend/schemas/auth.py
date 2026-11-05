@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, model_validator, ValidationError, EmailStr
+from pydantic import BaseModel, field_validator, model_validator
 
 from backend.schemas.user import validate_password
 
@@ -13,9 +13,9 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
-    @field_validator("password",mode="after")
+    @field_validator("username", mode="after")
     @classmethod
-    def to_lowercase_username(cls,v:str):
+    def to_lowercase_username(cls, v: str):
         return v.lower()
 
 
@@ -29,7 +29,7 @@ class ChangePassword(BaseModel):
         return validate_password(v)
 
     @model_validator(mode='after')
-    def password_mathc(self):
-        if self.old_password != self.new_password:
-            raise ValidationError("Старый пароль не должен совападать с новым")
+    def passwords_must_differ(self):
+        if self.old_password == self.new_password:
+            raise ValueError("Новый пароль должен отличаться от старого")
         return self

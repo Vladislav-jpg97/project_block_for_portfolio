@@ -71,7 +71,10 @@ def decode_token(token: str, expected: str = "access") -> int:
         if user_id_str is None or token_type != expected:
             raise credentials_exception
 
-    except JWTError:
+        user_id = int(user_id_str)
+        if user_id < 1:
+            raise credentials_exception
+    except (JWTError, TypeError, ValueError):
         raise credentials_exception
 
-    return int(user_id_str)
+    return user_id

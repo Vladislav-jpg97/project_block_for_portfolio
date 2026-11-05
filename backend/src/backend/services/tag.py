@@ -4,7 +4,7 @@ from starlette import status
 
 from backend.models import Tag
 from backend.repository.tag import TagRepository
-from backend.schemas.pagination import Page, PaginationParams
+from backend.schemas.pagination import PaginationParams
 from backend.schemas.tag import TagCreate
 from backend.utils.slug import slug_generate
 
@@ -18,7 +18,7 @@ class TagService:
             self,
             pagination: PaginationParams,
     ):
-        tags = self.tag_repo.get_all(
+        tags = await self.tag_repo.get_all(
             pagination=pagination
         )
         return tags
@@ -43,7 +43,7 @@ class TagService:
         await self.session.commit()
         return tag
 
-    async def delete(self,tag_id: int) -> None:
+    async def delete(self, tag_id: int) -> None:
         tag = await self.get_or_404(tag_id)
-        await self.session.delete(tag)
+        await self.tag_repo.delete(tag)
         await self.session.commit()

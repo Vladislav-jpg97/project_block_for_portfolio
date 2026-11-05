@@ -1,11 +1,12 @@
 from transliterate import translit
 import re
+from transliterate.exceptions import LanguageDetectionError
 
 
 def _transliterate(text: str) -> str:
     try:
         return translit(text, reversed=True)
-    except:
+    except LanguageDetectionError:
         return text
 
 

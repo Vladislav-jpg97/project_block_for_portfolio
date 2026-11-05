@@ -1,10 +1,11 @@
 from backend.models import Comment
+from sqlalchemy.orm.attributes import set_committed_value
 
 
 def build_comment_tree(comments: list[Comment]) -> list[Comment]:
     comment_map: dict[int, Comment] = {}
     for comment in comments:
-        comment.replies = []
+        set_committed_value(comment, "replies", [])
         comment_map[comment.id] = comment
 
     roots = []

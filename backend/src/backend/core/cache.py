@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from fastapi.encoders import jsonable_encoder
 from redis.asyncio import Redis
 
 
@@ -11,9 +12,9 @@ class CacheService:
     async def get(
             self,
             key: str
-    ):
-        value = self.client.get(key)
-        if value:
+    ) -> Any | None:
+        value = await self.client.get(key)
+        if value is not None:
             return json.loads(value)
         return None
 
@@ -26,7 +27,7 @@ class CacheService:
         await self.client.setex(
             key,
             ttl,
-            json.dumps(value, default=str)
+            json.dumps(jsonable_encoder(value))
         )
 
     async def delete(
@@ -39,7 +40,12 @@ class CacheService:
             self,
             pattern: str
     ):
-        keys = await self.client.keys(pattern)
+        keys: list[str] = []
+        async for key in self.client.scan_iter(match=pattern, count=100):
+            keys.append(key)
+            if len(keys) == 100:
+                await self.client.delete(*keys)
+                keys.clear()
         if keys:
             await self.client.delete(*keys)
 

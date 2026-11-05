@@ -3,27 +3,27 @@ from starlette import status
 
 from backend.dependencies.auth import CurrentUserDep
 from backend.dependencies.comment import CommentServiceDep
-from backend.dependencies.post import CurrentPostDep
+from backend.dependencies.post import PublishedPostDep
 from backend.schemas.comment import CommentResponse, CommentCreate, CommentUpdate
 
 router = APIRouter(
-    prefix="/posts/{post_id}/comments}",
+    prefix="/posts/{post_id}/comments",
     tags=["Comments"],
 )
 
 
 @router.get("/", response_model=list[CommentResponse])
 async def get_comments(
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         service: CommentServiceDep
 ):
     comments = await service.get_tree(post.id)
     return comments
 
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=CommentResponse)
 async def create_comment(
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         body: CommentCreate,
         service: CommentServiceDep,
         current_user: CurrentUserDep,
@@ -34,7 +34,7 @@ async def create_comment(
 
 @router.get("/{comment_id}")
 async def get_comment(
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         comment_id: int,
         service: CommentServiceDep
 ):
@@ -44,7 +44,7 @@ async def get_comment(
 
 @router.put("/{comment_id}", status_code=status.HTTP_200_OK)
 async def update_comment(
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         comment_id: int,
         body: CommentUpdate,
         service: CommentServiceDep,
@@ -55,7 +55,7 @@ async def update_comment(
 
 @router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comment(
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         comment_id: int,
         service: CommentServiceDep,
         current_user: CurrentUserDep,

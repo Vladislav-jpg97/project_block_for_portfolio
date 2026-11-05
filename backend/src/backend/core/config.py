@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 30
+    avatar_storage_dir: Path = BASE_DIR / "media" / "avatars"
 
 
 settings = Settings()

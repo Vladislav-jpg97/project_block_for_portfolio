@@ -11,6 +11,7 @@ from backend.services.auth import AuthService
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 oauth2_scheme = HTTPBearer()
+optional_oauth2_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_user_repo(
@@ -74,6 +75,35 @@ CurrentUserDep = Annotated[
 ]
 
 
+async def get_optional_current_user(
+        user_repo: UserRepoDep,
+        credentials: HTTPAuthorizationCredentials | None = Depends(optional_oauth2_scheme),
+) -> User | None:
+    # ADDED: Публичная лента доступна без токена, но с токеном получает состояние пользователя.
+    if credentials is None:
+        return None
+
+    user_id = decode_token(credentials.credentials)
+    user = await user_repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверные учетные данные",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Пользователь не активен",
+        )
+    return user
+
+
+OptionalCurrentUserDep = Annotated[
+    User | None,
+    Depends(get_optional_current_user),
+]
+
+
 async def verify_superuser(
         current_user: CurrentUserDep,
 ) -> None:
@@ -82,4 +112,3 @@ async def verify_superuser(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="У Вас нет прав!"
         )
-

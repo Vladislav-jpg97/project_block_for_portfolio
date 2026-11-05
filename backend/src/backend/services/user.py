@@ -8,6 +8,7 @@ from backend.repository.user import UserRepository
 from backend.schemas.pagination import PaginationParams
 from backend.schemas.post import PostFilters
 from backend.schemas.user import UserFilter, UserUpdate
+from backend.services.avatar import delete_avatar, store_avatar
 
 
 class UserService:
@@ -48,7 +49,7 @@ class UserService:
             self,
             user: User,
             body: UserUpdate,
-    ):
+    ) -> User:
         exists_username = await self.user_repo.get_by_username(body.username)
         if exists_username and exists_username.id != user.id:
             raise HTTPException(
@@ -68,11 +69,41 @@ class UserService:
         user.bio = body.bio
         await self.user_repo.update(user)
         await self.session.commit()
+        return user
+
+    async def upload_avatar(self, user: User, content: bytes) -> User:
+        new_url = await store_avatar(content)
+        old_url = user.avatar_url
+        user.avatar_url = new_url
+        try:
+            await self.user_repo.update(user)
+            await self.session.commit()
+        except Exception:
+            await self.session.rollback()
+            await delete_avatar(new_url)
+            raise
+        await delete_avatar(old_url)
+        return user
+
+    async def remove_avatar(self, user: User) -> User:
+        old_url = user.avatar_url
+        user.avatar_url = None
+        await self.user_repo.update(user)
+        await self.session.commit()
+        await delete_avatar(old_url)
+        return user
 
     async def get_bookmarked_posts(
             self,
             user: User,
             pagination: PaginationParams,
     ):
-        post = await self.post_repo.get_bookmarked_user_posts(user.id, pagination)
-        return post
+        posts = await self.post_repo.get_bookmarked_user_posts(user.id, pagination)
+        voted_ids, _ = await self.post_repo.get_user_interactions(
+            user.id,
+            [post.id for post in posts.items],
+        )
+        for post in posts.items:
+            post.is_bookmarked = True
+            post.user_vote = 1 if post.id in voted_ids else None
+        return posts

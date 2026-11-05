@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from backend.dependencies.auth import CurrentUserDep
-from backend.dependencies.post import PostServiceDep, CurrentPostDep
+from backend.dependencies.auth import CurrentUserDep, OptionalCurrentUserDep
+from backend.dependencies.post import PostServiceDep, CurrentPostDep, PublishedPostDep
 from backend.schemas.pagination import Page, PaginationParams
 from backend.schemas.post import PostCreate, PostBrief, PostUpdate, PostFilters, PostRead
 
@@ -12,7 +12,11 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=PostRead,
+)
 async def create_post(
         body: PostCreate,
         current_user: CurrentUserDep,
@@ -29,12 +33,16 @@ async def create_post(
 )
 async def list_posts(
         service: PostServiceDep,
+        current_user: OptionalCurrentUserDep,
         filters: PostFilters = Depends(),
         pagination: PaginationParams = Depends(),
 
 ):
-    post = await service.get_all(filters, pagination)
-    return post
+    return await service.get_all(
+        filters,
+        pagination,
+        user_id=current_user.id if current_user else None,
+    )
 
 
 @router.get(
@@ -43,14 +51,18 @@ async def list_posts(
 )
 async def get_post(
         slug: str,
+        current_user: OptionalCurrentUserDep,
         service: PostServiceDep
 ):
-    post = await service.view_or_404(slug)
-    return post
+    return await service.view_or_404(
+        slug,
+        user_id=current_user.id if current_user else None,
+    )
 
 
 @router.patch(
     "/{post_id}",
+    response_model=PostRead,
 )
 async def update_post(
         post_id: int,
@@ -58,7 +70,7 @@ async def update_post(
         current_user: CurrentUserDep,
         service: PostServiceDep
 ):
-    await service.update(post_id, body, current_user.id)
+    return await service.update(post_id, body, current_user.id)
 
 
 @router.delete(
@@ -93,7 +105,7 @@ async def publish_post(
 )
 async def vote_post(
         post_id: int,
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         current_user: CurrentUserDep,
         service: PostServiceDep
 ):
@@ -106,7 +118,7 @@ async def vote_post(
 )
 async def unvote_post(
         post_id: int,
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         current_user: CurrentUserDep,
         service: PostServiceDep
 ):
@@ -118,7 +130,7 @@ async def unvote_post(
     status_code=status.HTTP_201_CREATED, )
 async def bookmark_post(
         post_id: int,
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         current_user: CurrentUserDep,
         service: PostServiceDep
 ):
@@ -131,7 +143,7 @@ async def bookmark_post(
 )
 async def unbookmark_post(
         post_id: int,
-        post: CurrentPostDep,
+        post: PublishedPostDep,
         current_user: CurrentUserDep,
         service: PostServiceDep
 ):

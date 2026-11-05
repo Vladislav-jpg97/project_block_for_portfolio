@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
+from starlette import status
 
+from backend.dependencies.auth import verify_superuser
 from backend.dependencies.tag import TagServiceDep
 from backend.schemas.pagination import Page, PaginationParams
 from backend.schemas.tag import TagCreate, TagRead
@@ -10,7 +12,12 @@ router = APIRouter(
 )
 
 
-@router.post("/", )
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TagRead,
+    dependencies=[Depends(verify_superuser)],
+)
 async def create_tag(
         body: TagCreate,
         service: TagServiceDep
@@ -27,14 +34,14 @@ async def list_tags(
         service: TagServiceDep,
         pagination: PaginationParams = Depends(),
 ):
-    tags = service.get_all(
+    tags = await service.get_all(
         pagination=pagination,
     )
     return tags
 
 
 @router.get(
-    "{tag_id}",
+    "/{tag_id}",
     response_model=TagRead,
 )
 async def get_tag(
@@ -45,7 +52,11 @@ async def get_tag(
     return tag
 
 
-@router.delete("/{tag_id}", )
+@router.delete(
+    "/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_superuser)],
+)
 async def delete_tag(
         tag_id: int,
         service: TagServiceDep,

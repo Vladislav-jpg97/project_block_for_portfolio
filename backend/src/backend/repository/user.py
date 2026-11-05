@@ -35,7 +35,7 @@ class UserRepository(
             self,
             email: str,
     ) -> User | None:
-        stmt = self.base_model.where(User.email == email)
+        stmt = self.base_query.where(User.email == email)
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
         return user

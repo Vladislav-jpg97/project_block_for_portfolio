@@ -31,7 +31,7 @@ class TagRepository(
         result = await self.session.execute(
             select(func.count())
             .select_from(post_tags)
-            .where(post_tags.c.id == tag_id)
+            .where(post_tags.c.tag_id == tag_id)
         )
         count = result.scalar_one()
         tag = await self.get_by_id(tag_id)

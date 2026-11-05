@@ -63,14 +63,20 @@ class Post(TimeStampMixin, SlugMixin, Base):
 
     comments: Mapped[list["Comment"]] = relationship(
         back_populates="post",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     post_votes: Mapped[list["PostVote"]] = relationship(
         back_populates="post",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     bookmarks: Mapped[list["Bookmark"]] = relationship(
         back_populates="post",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     category: Mapped["Category"] = relationship(

@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import set_committed_value
 from starlette import status
 
 from backend.models import Comment
@@ -38,8 +39,13 @@ class CommentService:
             body: CommentCreate,
     ) -> Comment:
 
-        if body.parent_id:
+        if body.parent_id is not None:
             parent = await self.comment_repo.get_by_id(body.parent_id)
+            if not parent:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Родительский комментарий не найден",
+                )
             if parent.post_id != post_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -47,7 +53,7 @@ class CommentService:
                 )
 
         comment = Comment(
-            parent_id=post_id,
+            parent_id=body.parent_id,
             author_id=author_id,
             content=body.content,
             post_id=post_id,
@@ -55,8 +61,11 @@ class CommentService:
 
         await self.comment_repo.add(comment)
         await self.session.commit()
-        comment = await self.comment_repo.get_by_id(comment.id)
-        return comment
+        created_comment = await self.comment_repo.get_by_id(comment.id)
+        if created_comment is None:
+            raise RuntimeError("Created comment could not be reloaded")
+        set_committed_value(created_comment, "replies", [])
+        return created_comment
 
     async def update(
             self,

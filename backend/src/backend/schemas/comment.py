@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AuthorBriefResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
 
@@ -18,6 +20,8 @@ class CommentUpdate(BaseModel):
 
 
 class CommentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     content: str
     post_id: int
@@ -25,6 +29,6 @@ class CommentResponse(BaseModel):
     author: AuthorBriefResponse
     created_at: datetime
     updated_at: datetime
-    replies: list["CommentResponse"] = []
+    replies: list["CommentResponse"] = Field(default_factory=list)
 
 CommentResponse.model_rebuild()

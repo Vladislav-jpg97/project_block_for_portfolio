@@ -7,8 +7,8 @@ from backend.dependencies.category import CategoryServiceDep
 from backend.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 
 router = APIRouter(
-    prefix="/category",
-    tags=["category"],
+    prefix="/categories",
+    tags=["categories"],
 )
 
 
@@ -26,7 +26,10 @@ async def create_category(
     return category
 
 
-@router.get("/")
+@router.get(
+    "/",
+    response_model=list[CategoryRead],
+)
 async def list_categories(service: CategoryServiceDep):
     categories = await service.get_all()
     return categories
@@ -48,15 +51,16 @@ async def get_category(
 @router.put(
     "/{category_id}",
     status_code=status.HTTP_200_OK,
+    response_model=CategoryRead,
     dependencies=[Depends(verify_superuser)]
-
 )
 async def update_category(
         category_id: int,
         body: CategoryUpdate,
         service: CategoryServiceDep
 ):
-    await service.update(category_id, body)
+    category = await service.update(category_id, body)
+    return category
 
 
 @router.delete(

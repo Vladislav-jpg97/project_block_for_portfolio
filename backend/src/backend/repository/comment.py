@@ -17,12 +17,11 @@ class CommentRepository(
     DeleteRepositoryMixin[Comment],
 ):
     model = Comment
-    base_query = select(Comment)
+    base_query = select(Comment).options(selectinload(Comment.author))
 
     async def get_by_post(self, post_id: int) -> list[Comment]:
         stmt = self.base_query.where(Comment.post_id == post_id).options(
-            selectinload(Comment.autor)
+            selectinload(Comment.author)
         ).order_by(Comment.created_at.asc())
         result = await self.session.execute(stmt)
         return result.scalars().all()
-
