@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from backend.core.cache import CacheService
+from backend.dependencies.cache import CacheServiceDep
 from backend.models import Post, User, Bookmark
 from backend.models.vote import PostVote
 from backend.repository.bookmark import BookMarkRepository
@@ -10,7 +12,7 @@ from backend.repository.post_vote import PostVoteRepository
 from backend.repository.tag import TagRepository
 from backend.repository.user import UserRepository
 from backend.schemas.pagination import PaginationParams
-from backend.schemas.post import PostCreate, PostUpdate, PostFilters
+from backend.schemas.post import PostCreate, PostUpdate, PostFilters, PostRead
 from backend.utils.slug import slug_generate
 
 
@@ -23,6 +25,7 @@ class PostService:
             post_vote_repo: PostVoteRepository,
             user_repo: UserRepository,
             bookmark_repo: BookMarkRepository,
+            cache_service: CacheServiceDep,
     ):
         self.session = session
         self.post_repo = post_repo
@@ -30,6 +33,7 @@ class PostService:
         self.post_vote_repo = post_vote_repo
         self.user_repo = user_repo
         self.bookmark_repo = bookmark_repo
+        self.cache_service = cache_service
 
     async def _make_unique_slug(self, base_slug) -> str:
         slug = base_slug
@@ -58,6 +62,7 @@ class PostService:
             await self.tag_repo.sync_posts_count(tag.id)
 
         await self.session.commit()
+        await self.cache_service.delete_pattern(f"posts:list:*")
         return post
 
     async def update(
@@ -86,16 +91,29 @@ class PostService:
         await self.post_repo.update(post)
         await self.session.commit()
 
+        await self.cache_service.delete_pattern("posts:list:*")
+        await self.cache_service.delete(f"posts:detail:{post_id}")
+
     async def get_or_404(
             self,
             post_id: int
     ) -> Post:
+
+        cached_post = await self.cache_service.get(f"posts:detail:{post_id}")
+        if cached_post:
+            return cached_post
+
         post = await self.post_repo.get_by_id(post_id)
         if not post:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Пост не найден"
             )
+
+        await self.cache_service.set(
+            f"posts:detail:{post_id}",
+            PostRead.model_validate(post).model_dump()
+        )
         return post
 
     async def delete(self, post_id: int, current_user_id) -> None:
@@ -105,6 +123,8 @@ class PostService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Вы можете удалять только свои посты")
         await self.post_repo.delete(post)
         await self.session.commit()
+        await self.cache_service.delete_pattern("posts:list:*")
+        await self.cache_service.delete(f"posts:detail:{post_id}")
 
     async def view_or_404(self, slug: str) -> Post:
         post = await self.post_repo.get_by_slug(slug)
@@ -117,12 +137,37 @@ class PostService:
         await self.session.commit()
         return post
 
+    def _post_list_key(
+            self,
+            filters: PostFilters,
+            pagination: PaginationParams
+    ) -> str:
+        return (
+            f"post:list:"
+            f"page={pagination.page}:"
+            f"size={pagination.size}:"
+            f"q={filters.q}:"
+            f"category_id={filters.category_id}:"
+            f"author_id={filters.author_id}:"
+            f"date_from={filters.date_from}:"
+            f"date_to={filters.date_to}"
+        )
+
     async def get_all(
             self,
             filters: PostFilters,
             pagination: PaginationParams
     ) -> list[Post]:
-        posts = await self.post_repo.get_all(filters, pagination)
+        cache_key = self._post_list_key(filters, pagination)
+        cached_posts = await self.cache_service.get(cache_key)
+        if cached_posts:
+            return cached_posts
+
+        posts = await self.post_repo.get_all(
+            filters,
+            pagination
+        )
+        await self.cache_service.set(cache_key, posts.model_dump())
         return posts
 
     async def publish(self, current_user_id: int, post: Post):
@@ -201,8 +246,7 @@ class PostService:
         await self.bookmark_repo.add(bookmark)
         await self.session.commit()
 
-
-    async def remove_bookmark(self, post: Post,user: User):
+    async def remove_bookmark(self, post: Post, user: User):
         bookmark = await self.bookmark_repo.get_bookmark_by_post_user(post.id, user.id)
         if not bookmark:
             raise HTTPException(
