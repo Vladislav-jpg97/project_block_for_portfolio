@@ -28,6 +28,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   AuthDialog,
@@ -49,11 +50,31 @@ import type {
 type View = "feed" | "explore" | "bookmarks" | "profile";
 type SearchMode = "posts" | "developers";
 
-function getInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
+type Theme = "light" | "dark";
+const THEME_CHANGE_EVENT = "devtalks-theme-change";
+
+function getThemeSnapshot(): Theme {
   const savedTheme = window.localStorage.getItem("devtalks.theme");
   if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function subscribeToThemeChange(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(THEME_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(THEME_CHANGE_EVENT, onChange);
+  };
+}
+
+function setThemePreference(theme: Theme) {
+  window.localStorage.setItem("devtalks.theme", theme);
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+}
+
+function getServerThemeSnapshot(): Theme {
+  return "light";
 }
 
 const feedLabels: Record<FeedType, string> = {
@@ -122,7 +143,11 @@ export function DevTalksApp() {
   const [editingPost, setEditingPost] = useState<Post | null | "new">(null);
   const [commentsPost, setCommentsPost] = useState<Post | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
+  const theme = useSyncExternalStore(
+    subscribeToThemeChange,
+    getThemeSnapshot,
+    getServerThemeSnapshot,
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => setRefreshCounter((value) => value + 1), []);
@@ -176,7 +201,6 @@ export function DevTalksApp() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("devtalks.theme", theme);
   }, [theme]);
 
   useEffect(() => {
@@ -485,7 +509,7 @@ export function DevTalksApp() {
           </button>
           <button
             className="icon-button theme-toggle"
-            onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
+            onClick={() => setThemePreference(theme === "light" ? "dark" : "light")}
             aria-label={theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"}
             title={theme === "light" ? "Тёмная тема" : "Светлая тема"}
           >

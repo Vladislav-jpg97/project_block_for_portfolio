@@ -18,6 +18,8 @@ import { api, saveSession } from "@/lib/api";
 import type { Category, Comment, Post, PostInput, Tag, User } from "@/types/api";
 import { Avatar } from "@/components/post-card";
 
+const USERNAME_PATTERN = "[a-zA-Z0-9_\\x2d]+";
+
 type DialogShellProps = {
   eyebrow: string;
   title: string;
@@ -118,7 +120,7 @@ export function AuthDialog({
             placeholder="например, alex_dev"
             minLength={3}
             maxLength={100}
-            pattern="[a-zA-Z0-9_-]+"
+            pattern={USERNAME_PATTERN}
             required
           />
         </label>
@@ -634,7 +636,7 @@ export function ProfileDialog({
         </div>
         <label>
           Имя пользователя
-          <input value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={100} pattern="[a-zA-Z0-9_-]+" required />
+          <input value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={100} pattern={USERNAME_PATTERN} required />
         </label>
         <label>
           Электронная почта
