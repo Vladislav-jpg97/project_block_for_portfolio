@@ -4,12 +4,13 @@ from starlette import status
 from backend.dependencies.auth import CurrentUserDep
 from backend.dependencies.post import PostServiceDep, CurrentPostDep
 from backend.schemas.pagination import Page, PaginationParams
-from backend.schemas.post import PostCreate, PostBrief, PostRead, PostUpdate, PostFilters
+from backend.schemas.post import PostCreate, PostBrief, PostUpdate, PostFilters, PostRead
 
 router = APIRouter(
     prefix="/posts",
     tags=["Posts"],
 )
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_post(
@@ -92,30 +93,46 @@ async def publish_post(
 )
 async def vote_post(
         post_id: int,
+        post: CurrentPostDep,
+        current_user: CurrentUserDep,
+        service: PostServiceDep
 ):
-    pass
+    await service.vote_post(post, current_user)
 
 
 @router.delete(
     "/{post_id}/vote",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def unvote_post(post_id: int):
-    pass
+async def unvote_post(
+        post_id: int,
+        post: CurrentPostDep,
+        current_user: CurrentUserDep,
+        service: PostServiceDep
+):
+    await service.unvote_post(post, current_user)
 
 
 @router.post(
     "/{post_id}/bookmark",
     status_code=status.HTTP_201_CREATED, )
 async def bookmark_post(
-        post_id: int
+        post_id: int,
+        post: CurrentPostDep,
+        current_user: CurrentUserDep,
+        service: PostServiceDep
 ):
-    pass
+    await service.add_bookmark(post, current_user)
 
 
 @router.delete(
     "/{post_id}/bookmark",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def unbookmark_post(post_id: int):
-    pass
+async def unbookmark_post(
+        post_id: int,
+        post: CurrentPostDep,
+        current_user: CurrentUserDep,
+        service: PostServiceDep
+):
+    await service.remove_bookmark(post, current_user)

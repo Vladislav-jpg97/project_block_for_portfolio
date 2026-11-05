@@ -21,8 +21,6 @@ class PostVote(Base):
         ForeignKey("posts.id", ondelete="CASCADE"),
     )
 
-    value: Mapped[float] = mapped_column()
-
     user: Mapped["User"] = relationship(
         back_populates="post_votes",
     )

@@ -2,7 +2,6 @@ from datetime import datetime, date
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from dataclasses import dataclass
-from fastapi import Query
 from sqlalchemy import Select, or_
 
 from backend.models import Post
@@ -13,24 +12,13 @@ from backend.schemas.user import UserBrief
 
 @dataclass(frozen=True)
 class PostFilters(BaseFilter):
-    q: str | None = Query(
-        default=None,
-    )
-    category_id: int | None = Query(
-        default=None,
-        ge=1,
-    )
-    author_id: int | None = Query(
-        default=None,
-        ge=1,
-    )
+    q: str | None = None
+    category_id: int | None = None
+    author_id: int | None = None
 
-    date_from : date | None = Query(
-        default=None,
-    )
-    date_to: date | None = Query(
-        default=None,
-    )
+    date_from: date | None = None
+    date_to: date | None = None
+
     def filter(self, stmt: Select) -> Select:
         if self.q:
             pattern = f"%{self.q}%"
@@ -118,6 +106,7 @@ class PostBrief(PostBase):
         from_attributes=True,
     )
     id: int
+    slug: str
     is_published: bool
     views_count: int = 0
     votes_count: int = 0

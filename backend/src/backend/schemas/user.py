@@ -1,6 +1,9 @@
+from dataclasses import dataclass
 from datetime import datetime
-
 from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
+from sqlalchemy import Select
+from backend.models import User
+from backend.schemas.filters import BaseFilter
 
 
 def validate_password(password: str) -> str:
@@ -20,8 +23,11 @@ class UserBase(BaseModel):
     username: str = Field(
         min_length=3,
         max_length=100,
-        pattern=r"^[a-zA-Z0-9-]+$"
+        pattern=r"^[a-zA-Z0-9-_]+$"
     )
+    @field_validator("password",mode="after")
+    def to_lowercase_username(self,v:str):
+        return v.lower()
 
 
 class UserCreate(UserBase):
@@ -52,3 +58,13 @@ class UserRead(UserBrief):
     email: EmailStr
     bio: str | None = None
     created_at: datetime
+
+
+@dataclass(frozen=True)
+class UserFilter(BaseFilter):
+    q: str | None = None
+
+    def filter(self, stmt: Select) -> Select:
+        if self.q is not None:
+            stmt = stmt.where(User.username.ilike(f"%{self.q}%"))
+        return stmt

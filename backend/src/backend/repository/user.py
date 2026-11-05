@@ -39,3 +39,8 @@ class UserRepository(
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
         return user
+
+    async def get_posts_by_user(self, user_id: int):
+        stmt = select(self.model).where(self.model.author_id == user_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()

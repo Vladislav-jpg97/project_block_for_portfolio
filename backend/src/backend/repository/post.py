@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
-from backend.models import Post, Tag
+from backend.models import Post, Tag, User, Bookmark
 from backend.repository.base import BaseRepository
 from backend.repository.mixins import (
     AddRepositoryMixin,
@@ -10,6 +10,7 @@ from backend.repository.mixins import (
     DeleteRepositoryMixin,
     ListRepositoryMixin
 )
+from backend.schemas.pagination import PaginationParams, Page
 
 
 class PostRepository(
@@ -44,3 +45,29 @@ class PostRepository(
     async def increment_views(self, post: Post) -> None:
         post.votes_count += 1
         await self.session.flush()
+
+    async def get_bookmarked_user_posts(
+            self,
+            user_id : int,
+            pagination: PaginationParams
+    ):
+        stmt = self.base_query.join(
+            Post.bookmarks
+        ).where(
+            Bookmark.user_id == user_id
+        )
+        count_stmt = select(
+            func.count()
+        ).select_from(stmt.subquery())
+        total = (await self.session.execute(count_stmt)).scalar_one()
+
+        stmt = stmt.offset(pagination.offset).limit(pagination.limit)
+
+        result = await self.session.execute(stmt)
+        objs = result.scalars().all()
+
+        return Page.create(
+            items=objs,
+            total=total,
+            params=pagination
+        )

@@ -13,6 +13,10 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+    @field_validator("password",mode="after")
+    def to_lowercase_username(self,v:str):
+        return v.lower()
+
 
 class ChangePassword(BaseModel):
     old_password: str
